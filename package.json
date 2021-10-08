@@ -5,7 +5,7 @@
   "version": "0.0.1",
   "publisher": "mingor",
   "author": {
-    "name": "mingor-ljm"
+    "name": "mingor"
   },
   "engines": {
     "vscode": "^1.60.0"
@@ -16,6 +16,9 @@
   "activationEvents": [
     "onStartupFinished"
   ],
+  "repository": {
+    "url": "https://github.com/lgyytm/less-complement.git"
+  },
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
