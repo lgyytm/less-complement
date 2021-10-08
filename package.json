@@ -3,6 +3,7 @@
   "displayName": "less-variable-helper",
   "description": "help you import less variables",
   "version": "0.0.1",
+  "publisher": "mingor",
   "author": {
     "name": "mingor-ljm"
   },
