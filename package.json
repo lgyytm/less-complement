@@ -1,6 +1,6 @@
 {
-  "name": "less-variable-helper",
-  "displayName": "less-variable-helper",
+  "name": "less-complement-helper",
+  "displayName": "less-complement-helper",
   "description": "help you import less variables",
   "version": "0.0.1",
   "publisher": "mingor",
@@ -23,8 +23,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "less-variable-helper.start",
-        "title": "less-variable-helper"
+        "command": "less-complement-helper.start",
+        "title": "less-complement-helper"
       }
     ]
   },

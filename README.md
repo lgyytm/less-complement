@@ -1,7 +1,7 @@
-# less-variable-helper README
+# less-complement-helper README
 
-扩展 “less-variable-helper”
-your extension "less-variable-helper".
+扩展 “less-complement-helper”
+your extension "less-complement-helper".
 
 > 非自动识别每个less文件，而是识别每个less入口文件，可以支持多个
 > not auto scaning every less files, it's analyzing every entry less files, supporting muilty entries.
@@ -17,8 +17,8 @@ Include if your extension adds any VS Code settings through the `contributes.con
 
 This extension contributes the following settings:
 
-* `less-variable-helper.enable`: enable/disable this extension
-* `less-variable-helper.thing`: set to `blah` to do something
+* `less-complement-helper.enable`: enable/disable this extension
+* `less-complement-helper.thing`: set to `blah` to do something
 
 ## Using
 
