@@ -3,9 +3,25 @@
 /******/ 	var __webpack_modules__ = ([
 /* 0 */,
 /* 1 */
-/***/ ((module) => {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
-module.exports = require("vscode");
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const config_init_1 = __webpack_require__(2);
+const complement_1 = __webpack_require__(9);
+const init = async (context) => {
+    const instance = await (0, config_init_1.default)(context);
+    if (instance) {
+        const variableHelper = new complement_1.default({
+            config: instance,
+            context,
+        });
+        return variableHelper;
+    }
+    return null;
+};
+exports["default"] = init;
+
 
 /***/ }),
 /* 2 */
@@ -14,7 +30,7 @@ module.exports = require("vscode");
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const file_1 = __webpack_require__(3);
-const helper_1 = __webpack_require__(6);
+const helper_1 = __webpack_require__(8);
 // 获取基础配置信息
 const configFetch = async (context) => {
     const configArr = [(0, file_1.getFile)(".lessvhrc"), (0, file_1.getFile)("lessvhrc.js"), (0, file_1.getFile)("lessvhrc.json")];
@@ -56,9 +72,9 @@ exports["default"] = initialyze;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getRealFilePath = exports.readLine = exports.getFile = void 0;
-const vscode = __webpack_require__(1);
-const path = __webpack_require__(4);
-const fs = __webpack_require__(5);
+const vscode = __webpack_require__(4);
+const path = __webpack_require__(5);
+const fs = __webpack_require__(6);
 const readline = __webpack_require__(7);
 const getFile = (_path) => {
     return new Promise((resolve) => {
@@ -108,16 +124,28 @@ exports.getRealFilePath = getRealFilePath;
 /* 4 */
 /***/ ((module) => {
 
-module.exports = require("path");
+module.exports = require("vscode");
 
 /***/ }),
 /* 5 */
 /***/ ((module) => {
 
-module.exports = require("fs");
+module.exports = require("path");
 
 /***/ }),
 /* 6 */
+/***/ ((module) => {
+
+module.exports = require("fs");
+
+/***/ }),
+/* 7 */
+/***/ ((module) => {
+
+module.exports = require("readline");
+
+/***/ }),
+/* 8 */
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
@@ -273,18 +301,12 @@ exports["default"] = Helper;
 
 
 /***/ }),
-/* 7 */
-/***/ ((module) => {
-
-module.exports = require("readline");
-
-/***/ }),
-/* 8 */
+/* 9 */
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const vscode = __webpack_require__(1);
+const vscode = __webpack_require__(4);
 class InputComplement {
     constructor({ config, context }) {
         this.config = config;
@@ -363,28 +385,6 @@ class InputComplement {
 exports["default"] = InputComplement;
 
 
-/***/ }),
-/* 9 */
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const config_init_1 = __webpack_require__(2);
-const complement_1 = __webpack_require__(8);
-const init = async (context) => {
-    const instance = await (0, config_init_1.default)(context);
-    if (instance) {
-        const variableHelper = new complement_1.default({
-            config: instance,
-            context,
-        });
-        return variableHelper;
-    }
-    return null;
-};
-exports["default"] = init;
-
-
 /***/ })
 /******/ 	]);
 /************************************************************************/
@@ -420,7 +420,7 @@ var exports = __webpack_exports__;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.deactivate = exports.activate = void 0;
-const init_1 = __webpack_require__(9);
+const init_1 = __webpack_require__(1);
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
