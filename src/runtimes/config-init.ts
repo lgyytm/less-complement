@@ -34,9 +34,9 @@ const initialyze = async (context: vscode.ExtensionContext) => {
   if (config === null) {
     return;
   }
-  const instance = new Helper({ config });
-  await instance.init();
-  return instance;
+  const helper = new Helper({ config });
+  await helper.init();
+  return helper;
 };
 
 export default initialyze;

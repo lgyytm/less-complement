@@ -1,3 +1,4 @@
+import path = require("path");
 import { CONFIG } from "./config-init";
 import { readLine } from "./file";
 
@@ -28,34 +29,42 @@ export default class Helper {
     }
   }
   async init() {
+    const entryPath = "./";
     if (Array.isArray(this.entry)) {
-      this.entry = this.entry.map((i) => this.aliasReplace(i));
+      this.entry = this.entry.map((i) => this.aliasReplace(i, entryPath));
     } else {
-      this.entry = this.aliasReplace(this.entry);
+      this.entry = this.aliasReplace(this.entry, entryPath);
     }
-    await this.initialyze();
+    await this.initialyze(entryPath);
   }
   /**
    * 替换别名
    * @param str string 原始string
    * @returns 替换别名结果
    */
-  aliasReplace(str: string) {
+  aliasReplace(str: string, relativePath: string) {
     const alias = Object.keys(this.alias);
     if (alias.length === 0) {
       return str;
     }
+    let isContainAlias = false;
     for (const alia of alias) {
+      if (str.includes(alia)) {
+        isContainAlias = true;
+      }
       str = str.replace(alia, this.alias[alia]);
+    }
+    if (!isContainAlias) {
+      str = path.resolve(relativePath, str);
     }
     return str;
   }
   /**
    * 解析文件
    */
-  async initialyze() {
+  async initialyze(relativePath: string) {
     if (Array.isArray(this.entry)) {
-      this.entry = this.entry.map((i) => this.aliasReplace(i));
+      this.entry = this.entry.map((i) => this.aliasReplace(i, relativePath));
       for (const i of this.entry) {
         await this.processFile(i);
       }
@@ -68,18 +77,19 @@ export default class Helper {
    * @param file string 文件路径
    */
   async processFile(file: string) {
+    const relativePath = file.replace(/[^/]*$/, "");
     await readLine(file, async (lineContent) => {
-      await this.analyze(lineContent);
+      await this.analyze(lineContent, relativePath);
     });
   }
   /**
    * 分析less内容
    * @param content string 内容
    */
-  async analyze(content: string) {
+  async analyze(content: string, relativePath: string) {
     switch (true) {
       case content.startsWith("@import"):
-        await this.initialyzeChildFile(content);
+        await this.initialyzeChildFile(content, relativePath);
         break;
       case content.startsWith("."):
         this.initialyzeClassName(content);
@@ -98,11 +108,11 @@ export default class Helper {
    * 处理引入文件
    * @param content string 内容
    */
-  async initialyzeChildFile(content: string) {
+  async initialyzeChildFile(content: string, relativePath: string) {
     const fileReg = /["'](.+.less)['"]/gi;
     const result = fileReg.exec(content);
     if (result) {
-      const file = this.aliasReplace(result[1]);
+      const file = this.aliasReplace(result[1], relativePath);
       await this.processFile(file);
     }
   }
