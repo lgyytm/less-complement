@@ -1,6 +1,5 @@
 import Helper from "./helper";
 import * as vscode from "vscode";
-import { VariablesInfo } from "./code-action";
 
 export default class InputComplement {
   config?: Helper;
