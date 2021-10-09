@@ -122,7 +122,7 @@ export default class Helper {
    */
   initialyzeClassName(content: string) {
     if (content.startsWith(".") && this.holdingStr) {
-      const classNameReg = /.([\w-]+)([\s\S]+)?/gi;
+      const classNameReg = /(.[\w-]+)([\s\S]+)?/gi;
       const result = classNameReg.exec(this.holdingStr);
       if (result) {
         const className = result[1] ?? "";
@@ -143,7 +143,7 @@ export default class Helper {
    * @param content string 内容
    */
   initialyzeVariable(content: string) {
-    const variableReg = /@([\w]+)\s?:\s?([^;]+);/gi;
+    const variableReg = /(@[\w]+)\s?:\s?([^;]+);/gi;
     const result = variableReg.exec(content);
     let variable, value;
     if (result) {

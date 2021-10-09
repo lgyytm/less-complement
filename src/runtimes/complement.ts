@@ -1,5 +1,6 @@
 import Helper from "./helper";
 import * as vscode from "vscode";
+import { VariablesInfo } from "./code-action";
 
 export default class InputComplement {
   config?: Helper;
@@ -24,6 +25,8 @@ export default class InputComplement {
     const t = this;
     const provideCompletionItems = (document: vscode.TextDocument, position: vscode.Position) =>
       t.provideVaribalesCompletionItems.call(t, document, position);
+    const provideHover = (document: vscode.TextDocument, position: vscode.Position) =>
+      t.varibalesHoverProvider.call(t, document, position);
     const provider = vscode.languages.registerCompletionItemProvider(
       "less",
       {
@@ -32,6 +35,16 @@ export default class InputComplement {
       "@" // triggered whenever a '@' is being typed
     );
     this.context?.subscriptions?.push(provider);
+    const hoverProvider = vscode.languages.registerHoverProvider("less", {
+      provideHover,
+    });
+    this.context?.subscriptions?.push(hoverProvider);
+  }
+  varibalesHoverProvider(document: vscode.TextDocument, position: vscode.Position) {
+    const word = document.getText(document.getWordRangeAtPosition(position));
+    if (this.config?.variableMap[word]) {
+      return new vscode.Hover(`${word}: ${this.config?.variableMap[word]}`);
+    }
   }
   provideVaribalesCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
     // get all text until the `position` and check if it reads `console.`
@@ -47,7 +60,7 @@ export default class InputComplement {
       const isColor =
         i[1].startsWith("#") || i[1].toLowerCase().startsWith("rgb") || i[1].toLowerCase().startsWith("hls");
       const type = isColor ? vscode.CompletionItemKind.Color : vscode.CompletionItemKind.Variable;
-      const completion = new vscode.CompletionItem(`@${i[0]}`, type);
+      const completion = new vscode.CompletionItem(`${i[0]}`, type);
       completion.detail = i[1];
       completion.documentation = i[1];
       return completion;
@@ -78,7 +91,7 @@ export default class InputComplement {
     const complements =
       t.config?.classes?.map((i) => {
         const CompletionItemLabel: vscode.CompletionItemLabel = {
-          label: `.${i.class}`,
+          label: `${i.class}`,
         };
         const complement = new vscode.CompletionItem(CompletionItemLabel, vscode.CompletionItemKind.Variable);
         complement.detail = i.detail;

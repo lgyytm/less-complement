@@ -274,7 +274,7 @@ class Helper {
      */
     initialyzeClassName(content) {
         if (content.startsWith(".") && this.holdingStr) {
-            const classNameReg = /.([\w-]+)([\s\S]+)?/gi;
+            const classNameReg = /(.[\w-]+)([\s\S]+)?/gi;
             const result = classNameReg.exec(this.holdingStr);
             if (result) {
                 const className = result[1] ?? "";
@@ -297,7 +297,7 @@ class Helper {
      * @param content string 内容
      */
     initialyzeVariable(content) {
-        const variableReg = /@([\w]+)\s?:\s?([^;]+);/gi;
+        const variableReg = /(@[\w]+)\s?:\s?([^;]+);/gi;
         const result = variableReg.exec(content);
         let variable, value;
         if (result) {
@@ -338,11 +338,22 @@ class InputComplement {
     pushVaribales() {
         const t = this;
         const provideCompletionItems = (document, position) => t.provideVaribalesCompletionItems.call(t, document, position);
+        const provideHover = (document, position) => t.varibalesHoverProvider.call(t, document, position);
         const provider = vscode.languages.registerCompletionItemProvider("less", {
             provideCompletionItems,
         }, "@" // triggered whenever a '@' is being typed
         );
         this.context?.subscriptions?.push(provider);
+        const hoverProvider = vscode.languages.registerHoverProvider("less", {
+            provideHover,
+        });
+        this.context?.subscriptions?.push(hoverProvider);
+    }
+    varibalesHoverProvider(document, position) {
+        const word = document.getText(document.getWordRangeAtPosition(position));
+        if (this.config?.variableMap[word]) {
+            return new vscode.Hover(`${word}: ${this.config?.variableMap[word]}`);
+        }
     }
     provideVaribalesCompletionItems(document, position) {
         // get all text until the `position` and check if it reads `console.`
@@ -357,7 +368,7 @@ class InputComplement {
             // be inserted and then the character will be typed.
             const isColor = i[1].startsWith("#") || i[1].toLowerCase().startsWith("rgb") || i[1].toLowerCase().startsWith("hls");
             const type = isColor ? vscode.CompletionItemKind.Color : vscode.CompletionItemKind.Variable;
-            const completion = new vscode.CompletionItem(`@${i[0]}`, type);
+            const completion = new vscode.CompletionItem(`${i[0]}`, type);
             completion.detail = i[1];
             completion.documentation = i[1];
             return completion;
@@ -383,7 +394,7 @@ class InputComplement {
         }
         const complements = t.config?.classes?.map((i) => {
             const CompletionItemLabel = {
-                label: `.${i.class}`,
+                label: `${i.class}`,
             };
             const complement = new vscode.CompletionItem(CompletionItemLabel, vscode.CompletionItemKind.Variable);
             complement.detail = i.detail;
