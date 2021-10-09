@@ -111,7 +111,7 @@ const getRealFilePath = (_path) => {
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders)
             return "";
-        return path.resolve(workspaceFolders[0].uri.fsPath, _path);
+        return path.join(workspaceFolders[0].uri.fsPath, _path);
     }
     catch (e) {
         return "";
@@ -179,7 +179,7 @@ class Helper {
         }
     }
     async init() {
-        const entryPath = "./";
+        const entryPath = ".";
         if (Array.isArray(this.entry)) {
             this.entry = this.entry.map((i) => this.aliasReplace(i, entryPath));
         }
@@ -206,7 +206,7 @@ class Helper {
             str = str.replace(alia, this.alias[alia]);
         }
         if (!isContainAlias) {
-            str = path.resolve(relativePath, str);
+            str = path.join(relativePath, str);
         }
         return str;
     }
@@ -229,7 +229,7 @@ class Helper {
      * @param file string 文件路径
      */
     async processFile(file) {
-        const relativePath = file.replace(/[^/]*$/, "");
+        const relativePath = path.dirname(file);
         await (0, file_1.readLine)(file, async (lineContent) => {
             await this.analyze(lineContent, relativePath);
         });

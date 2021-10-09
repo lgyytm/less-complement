@@ -29,7 +29,7 @@ export default class Helper {
     }
   }
   async init() {
-    const entryPath = "./";
+    const entryPath = ".";
     if (Array.isArray(this.entry)) {
       this.entry = this.entry.map((i) => this.aliasReplace(i, entryPath));
     } else {
@@ -55,7 +55,7 @@ export default class Helper {
       str = str.replace(alia, this.alias[alia]);
     }
     if (!isContainAlias) {
-      str = path.resolve(relativePath, str);
+      str = path.join(relativePath, str);
     }
     return str;
   }
@@ -77,7 +77,7 @@ export default class Helper {
    * @param file string 文件路径
    */
   async processFile(file: string) {
-    const relativePath = file.replace(/[^/]*$/, "");
+    const relativePath = path.dirname(file);
     await readLine(file, async (lineContent) => {
       await this.analyze(lineContent, relativePath);
     });

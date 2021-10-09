@@ -37,7 +37,7 @@ export const getRealFilePath = (_path: string) => {
   try {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) return "";
-    return path.resolve(workspaceFolders[0].uri.fsPath, _path);
+    return path.join(workspaceFolders[0].uri.fsPath, _path);
   } catch (e) {
     return "";
   }
