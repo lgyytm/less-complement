@@ -9,7 +9,9 @@ export default function ClassHoverProvider(config: Helper) {
     if (!_class) return;
     const base = path.basename(_class.path);
     const hover = new vscode.Hover(
-      `变量(variable): ${word};\r\n` + `值(value): ${_class.detail};\r\n` + `来源(from): [${base}](${_class.path});\r\n`
+      `变量(variable): ${word};\r\n \n` +
+        `值(value): ${_class.detail};\r\n \n` +
+        `来源(from): [${base}](${_class.path});\r\n \n`
     );
     return hover;
   };

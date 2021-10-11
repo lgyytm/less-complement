@@ -8,9 +8,9 @@ export default function VariableHoverProvider(config: Helper) {
     const base = path.basename(config?.variableMap[word].path);
     if (config?.variableMap[word]) {
       const hover = new vscode.Hover(
-        `变量(variable): ${word};\r\n` +
-          `值(value): ${config?.variableMap[word].value};\r\n` +
-          `来源(from): [${base}](${config?.variableMap[word].path});\r\n`
+        `变量(variable): ${word};\r\n \n` +
+          `值(value): ${config?.variableMap[word].value};\r\n \n` +
+          `来源(from): [${base}](${config?.variableMap[word].path});\r\n \n`
       );
       return hover;
     }

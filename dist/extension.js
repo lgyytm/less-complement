@@ -399,9 +399,9 @@ function VariableHoverProvider(config) {
         const word = document.getText(document.getWordRangeAtPosition(position));
         const base = path.basename(config?.variableMap[word].path);
         if (config?.variableMap[word]) {
-            const hover = new vscode.Hover(`变量(variable): ${word};\r\n` +
-                `值(value): ${config?.variableMap[word].value};\r\n` +
-                `来源(from): [${base}](${config?.variableMap[word].path});\r\n`);
+            const hover = new vscode.Hover(`变量(variable): ${word};\r\n \n` +
+                `值(value): ${config?.variableMap[word].value};\r\n \n` +
+                `来源(from): [${base}](${config?.variableMap[word].path});\r\n \n`);
             return hover;
         }
     };
@@ -428,7 +428,9 @@ function ClassHoverProvider(config) {
         if (!_class)
             return;
         const base = path.basename(_class.path);
-        const hover = new vscode.Hover(`变量(variable): ${word};\r\n` + `值(value): ${_class.detail};\r\n` + `来源(from): [${base}](${_class.path});\r\n`);
+        const hover = new vscode.Hover(`变量(variable): ${word};\r\n \n` +
+            `值(value): ${_class.detail};\r\n \n` +
+            `来源(from): [${base}](${_class.path});\r\n \n`);
         return hover;
     };
     const provider = vscode.languages.registerHoverProvider("less", {
@@ -458,6 +460,7 @@ function ClassProvider(config) {
             };
             const complement = new vscode.CompletionItem(CompletionItemLabel, vscode.CompletionItemKind.Variable);
             complement.detail = i.detail;
+            complement.insertText = `${i.class}();`;
             return complement;
         }) || [];
         return [...complements];

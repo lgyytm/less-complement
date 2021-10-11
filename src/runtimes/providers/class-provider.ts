@@ -14,6 +14,7 @@ export default function ClassProvider(config: Helper) {
         };
         const complement = new vscode.CompletionItem(CompletionItemLabel, vscode.CompletionItemKind.Variable);
         complement.detail = i.detail;
+        complement.insertText = `${i.class}();`;
         return complement;
       }) || [];
     return [...complements];
