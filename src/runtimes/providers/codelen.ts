@@ -1,5 +1,6 @@
 import Helper from "../helper";
 import * as vscode from "vscode";
+import { getRealFilePath } from "../file";
 
 export default function codelenProvider(config: Helper) {
   const provideCodeLenses = (document: vscode.TextDocument, token: vscode.CancellationToken) => {
@@ -10,6 +11,10 @@ export default function codelenProvider(config: Helper) {
         const variableMatches = text.matchAll(new RegExp(value, "g"));
         for (const variableMatch of variableMatches) {
           const variable = config.variableValueMap[value].variable;
+          const path = config.variableValueMap[value].path;
+          if (document.uri.path === path || document.uri.path === getRealFilePath(path)) {
+            continue;
+          }
           if (variableMatch?.index !== undefined && variableMatch?.index > -1) {
             const line = document.lineAt(document.positionAt(variableMatch?.index).line);
             const indexOf = line.text.indexOf(variableMatch[0]);

@@ -122,7 +122,7 @@ export default class Helper {
    * @param content string 内容
    */
   initialyzeClassName(content: string, line: number, path: string) {
-    if (content.startsWith(".") && this.holdingStr) {
+    const pushClass = () => {
       const classNameReg = /(.[\w-]+)([\s\S]+)?/gi;
       const result = classNameReg.exec(this.holdingStr);
       if (result) {
@@ -130,9 +130,15 @@ export default class Helper {
         const detail = result[2] ?? "";
         if (className) {
           this.classes.push({ class: className, detail, path, line });
-          this.holdingStr = content;
+          this.holdingStr = "";
         }
       }
+    };
+    if (content.startsWith(".") && this.holdingStr) {
+      pushClass();
+    } else if (content.startsWith("}") && this.holdingStr) {
+      this.holdingStr += `\r\n \n${content}`;
+      pushClass();
     } else if (!content.startsWith(".") && this.holdingStr) {
       this.holdingStr += `\r\n \n${content}`;
     } else if (content.startsWith(".") && !this.holdingStr) {

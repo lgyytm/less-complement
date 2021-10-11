@@ -278,7 +278,7 @@ class Helper {
      * @param content string 内容
      */
     initialyzeClassName(content, line, path) {
-        if (content.startsWith(".") && this.holdingStr) {
+        const pushClass = () => {
             const classNameReg = /(.[\w-]+)([\s\S]+)?/gi;
             const result = classNameReg.exec(this.holdingStr);
             if (result) {
@@ -286,9 +286,16 @@ class Helper {
                 const detail = result[2] ?? "";
                 if (className) {
                     this.classes.push({ class: className, detail, path, line });
-                    this.holdingStr = content;
+                    this.holdingStr = "";
                 }
             }
+        };
+        if (content.startsWith(".") && this.holdingStr) {
+            pushClass();
+        }
+        else if (content.startsWith("}") && this.holdingStr) {
+            this.holdingStr += `\r\n \n${content}`;
+            pushClass();
         }
         else if (!content.startsWith(".") && this.holdingStr) {
             this.holdingStr += `\r\n \n${content}`;
@@ -579,6 +586,7 @@ exports["default"] = definationProvider;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const vscode = __webpack_require__(4);
+const file_1 = __webpack_require__(3);
 function codelenProvider(config) {
     const provideCodeLenses = (document, token) => {
         const text = document.getText();
@@ -588,6 +596,10 @@ function codelenProvider(config) {
                 const variableMatches = text.matchAll(new RegExp(value, "g"));
                 for (const variableMatch of variableMatches) {
                     const variable = config.variableValueMap[value].variable;
+                    const path = config.variableValueMap[value].path;
+                    if (document.uri.path === path || document.uri.path === (0, file_1.getRealFilePath)(path)) {
+                        continue;
+                    }
                     if (variableMatch?.index !== undefined && variableMatch?.index > -1) {
                         const line = document.lineAt(document.positionAt(variableMatch?.index).line);
                         const indexOf = line.text.indexOf(variableMatch[0]);
