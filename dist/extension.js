@@ -622,23 +622,36 @@ exports["default"] = codelenProvider;
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const vscode = __webpack_require__(4);
+const replace_command_1 = __webpack_require__(18);
 class Commands {
     constructor() {
         this.init();
     }
     init() {
-        vscode.commands.registerCommand("less-complement-helper.replace", (text, replaceText, line, position, range) => {
-            const editor = vscode.window.activeTextEditor;
-            if (editor) {
-                editor.edit((editBuilder) => {
-                    editBuilder.replace(range, replaceText);
-                });
-            }
-        });
+        (0, replace_command_1.default)();
     }
 }
 exports["default"] = Commands;
+
+
+/***/ }),
+/* 18 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+function replaceCommand() {
+    vscode.commands.registerCommand("less-complement-helper.replace", (text, replaceText, line, position, range) => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            editor.edit((editBuilder) => {
+                editBuilder.replace(range, replaceText);
+            });
+        }
+    });
+}
+exports["default"] = replaceCommand;
 
 
 /***/ })
