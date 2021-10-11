@@ -1,13 +1,14 @@
 import path = require("path");
 import { CONFIG } from "./config-init";
-import { readLine } from "./file";
+import { getRealFilePath, readLine } from "./file";
 
 export default class Helper {
   alias: { [k: string]: string } = {};
   entry: string | string[] = "";
-  variableMap: { [k: string]: string } = {};
+  variableMap: { [k: string]: { value: string; path: string; line: number } } = {};
+  variableValueMap: { [k: string]: { variable: string; path: string; line: number } } = {};
   holdingStr = "";
-  classes: { class: string; detail: string }[] = [];
+  classes: { class: string; detail: string; path: string; line: number }[] = [];
   constructor({ config }: { config: CONFIG }) {
     const { alias = {}, entry = "" } = config;
     if (Object.prototype.toString.call(alias) === "[object Object]") {
@@ -78,28 +79,28 @@ export default class Helper {
    */
   async processFile(file: string) {
     const relativePath = path.dirname(file);
-    await readLine(file, async (lineContent) => {
-      await this.analyze(lineContent, relativePath);
+    await readLine(file, async (lineContent, line) => {
+      await this.analyze(lineContent, line, relativePath, getRealFilePath(file));
     });
   }
   /**
    * 分析less内容
    * @param content string 内容
    */
-  async analyze(content: string, relativePath: string) {
+  async analyze(content: string, line: number, relativePath: string, file: string) {
     switch (true) {
       case content.startsWith("@import"):
         await this.initialyzeChildFile(content, relativePath);
         break;
       case content.startsWith("."):
-        this.initialyzeClassName(content);
+        this.initialyzeClassName(content, line, file);
         break;
       case content.startsWith("@"):
-        this.initialyzeVariable(content);
+        this.initialyzeVariable(content, line, file);
         break;
       default:
         if (this.holdingStr) {
-          this.initialyzeClassName(content);
+          this.initialyzeClassName(content, line, file);
         }
         break;
     }
@@ -120,7 +121,7 @@ export default class Helper {
    * 处理class name
    * @param content string 内容
    */
-  initialyzeClassName(content: string) {
+  initialyzeClassName(content: string, line: number, path: string) {
     if (content.startsWith(".") && this.holdingStr) {
       const classNameReg = /(.[\w-]+)([\s\S]+)?/gi;
       const result = classNameReg.exec(this.holdingStr);
@@ -128,7 +129,7 @@ export default class Helper {
         const className = result[1] ?? "";
         const detail = result[2] ?? "";
         if (className) {
-          this.classes.push({ class: className, detail });
+          this.classes.push({ class: className, detail, path, line });
           this.holdingStr = content;
         }
       }
@@ -142,14 +143,15 @@ export default class Helper {
    * 处理变量
    * @param content string 内容
    */
-  initialyzeVariable(content: string) {
+  initialyzeVariable(content: string, line: number, path: string) {
     const variableReg = /(@[\w]+)\s?:\s?([^;]+);/gi;
     const result = variableReg.exec(content);
     let variable, value;
     if (result) {
       variable = result[1];
       value = result[2];
-      this.variableMap[variable] = value;
+      this.variableMap[variable] = { value, path, line };
+      this.variableValueMap[value] = { variable, path, line };
     }
   }
 }

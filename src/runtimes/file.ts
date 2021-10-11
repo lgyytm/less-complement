@@ -18,16 +18,17 @@ export const getFile = (_path: string) => {
   });
 };
 
-export const readLine = async (_path: string, cb?: (c: string) => Promise<any>) => {
+export const readLine = async (_path: string, cb?: (c: string, l: number) => Promise<any>) => {
   const fileStream = fs.createReadStream(getRealFilePath(_path));
-
+  let lineIndex = 0;
   const rl = readline.createInterface({
     input: fileStream,
     crlfDelay: Infinity,
   });
   for await (const line of rl) {
     if (cb) {
-      await cb(line);
+      await cb(line, lineIndex);
+      lineIndex++;
     }
   }
   return;

@@ -94,13 +94,15 @@ const getFile = (_path) => {
 exports.getFile = getFile;
 const readLine = async (_path, cb) => {
     const fileStream = fs.createReadStream((0, exports.getRealFilePath)(_path));
+    let lineIndex = 0;
     const rl = readline.createInterface({
         input: fileStream,
         crlfDelay: Infinity,
     });
     for await (const line of rl) {
         if (cb) {
-            await cb(line);
+            await cb(line, lineIndex);
+            lineIndex++;
         }
     }
     return;
@@ -157,6 +159,7 @@ class Helper {
         this.alias = {};
         this.entry = "";
         this.variableMap = {};
+        this.variableValueMap = {};
         this.holdingStr = "";
         this.classes = [];
         const { alias = {}, entry = "" } = config;
@@ -230,28 +233,28 @@ class Helper {
      */
     async processFile(file) {
         const relativePath = path.dirname(file);
-        await (0, file_1.readLine)(file, async (lineContent) => {
-            await this.analyze(lineContent, relativePath);
+        await (0, file_1.readLine)(file, async (lineContent, line) => {
+            await this.analyze(lineContent, line, relativePath, (0, file_1.getRealFilePath)(file));
         });
     }
     /**
      * 分析less内容
      * @param content string 内容
      */
-    async analyze(content, relativePath) {
+    async analyze(content, line, relativePath, file) {
         switch (true) {
             case content.startsWith("@import"):
                 await this.initialyzeChildFile(content, relativePath);
                 break;
             case content.startsWith("."):
-                this.initialyzeClassName(content);
+                this.initialyzeClassName(content, line, file);
                 break;
             case content.startsWith("@"):
-                this.initialyzeVariable(content);
+                this.initialyzeVariable(content, line, file);
                 break;
             default:
                 if (this.holdingStr) {
-                    this.initialyzeClassName(content);
+                    this.initialyzeClassName(content, line, file);
                 }
                 break;
         }
@@ -272,7 +275,7 @@ class Helper {
      * 处理class name
      * @param content string 内容
      */
-    initialyzeClassName(content) {
+    initialyzeClassName(content, line, path) {
         if (content.startsWith(".") && this.holdingStr) {
             const classNameReg = /(.[\w-]+)([\s\S]+)?/gi;
             const result = classNameReg.exec(this.holdingStr);
@@ -280,7 +283,7 @@ class Helper {
                 const className = result[1] ?? "";
                 const detail = result[2] ?? "";
                 if (className) {
-                    this.classes.push({ class: className, detail });
+                    this.classes.push({ class: className, detail, path, line });
                     this.holdingStr = content;
                 }
             }
@@ -296,14 +299,15 @@ class Helper {
      * 处理变量
      * @param content string 内容
      */
-    initialyzeVariable(content) {
+    initialyzeVariable(content, line, path) {
         const variableReg = /(@[\w]+)\s?:\s?([^;]+);/gi;
         const result = variableReg.exec(content);
         let variable, value;
         if (result) {
             variable = result[1];
             value = result[2];
-            this.variableMap[variable] = value;
+            this.variableMap[variable] = { value, path, line };
+            this.variableValueMap[value] = { variable, path, line };
         }
     }
 }
@@ -316,14 +320,17 @@ exports["default"] = Helper;
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const vscode = __webpack_require__(4);
+const variable_provider_1 = __webpack_require__(10);
+const class_provider_1 = __webpack_require__(11);
+const variable_hover_provider_1 = __webpack_require__(12);
+const class_hover_provider_1 = __webpack_require__(13);
+const variable_value_provider_1 = __webpack_require__(14);
+const defination_1 = __webpack_require__(15);
 class InputComplement {
     constructor({ config, context }) {
         this.config = config;
         this.context = context;
         this.runComplement();
-        this.provideVaribalesCompletionItems = this.provideVaribalesCompletionItems.bind(this);
-        this.provideClassCompletionItems = this.provideClassCompletionItems.bind(this);
     }
     runComplement() {
         const context = this.context;
@@ -333,66 +340,86 @@ class InputComplement {
     }
     pushInput() {
         this.pushVaribales();
+        this.pushVaribalesValue();
         this.pushClassName();
+        this.pushDefinationProviderValue();
     }
     pushVaribales() {
         const t = this;
-        const provideCompletionItems = (document, position) => t.provideVaribalesCompletionItems.call(t, document, position);
-        const provideHover = (document, position) => t.varibalesHoverProvider.call(t, document, position);
-        const provider = vscode.languages.registerCompletionItemProvider("less", {
-            provideCompletionItems,
-        }, "@" // triggered whenever a '@' is being typed
-        );
-        this.context?.subscriptions?.push(provider);
-        const hoverProvider = vscode.languages.registerHoverProvider("less", {
-            provideHover,
-        });
-        this.context?.subscriptions?.push(hoverProvider);
+        const variableProvider = (0, variable_provider_1.default)(t.config);
+        const variableHoverProvider = (0, variable_hover_provider_1.default)(t.config);
+        t.context?.subscriptions?.push(variableProvider);
+        t.context?.subscriptions?.push(variableHoverProvider);
     }
-    varibalesHoverProvider(document, position) {
-        const word = document.getText(document.getWordRangeAtPosition(position));
-        if (this.config?.variableMap[word]) {
-            return new vscode.Hover(`${word}: ${this.config?.variableMap[word]}`);
-        }
+    pushVaribalesValue() {
+        const t = this;
+        const variableValueProvider = (0, variable_value_provider_1.default)(t.config);
+        t.context?.subscriptions?.push(variableValueProvider);
     }
-    provideVaribalesCompletionItems(document, position) {
-        // get all text until the `position` and check if it reads `console.`
-        // and if so then complete if `log`, `warn`, and `error`
+    pushDefinationProviderValue() {
+        const t = this;
+        const defination = (0, defination_1.default)(t.config);
+        t.context?.subscriptions?.push(defination);
+    }
+    pushClassName() {
+        const t = this;
+        const provider = (0, class_provider_1.default)(t.config);
+        const classHoverProvider = (0, class_hover_provider_1.default)(t.config);
+        t.context?.subscriptions.push(provider);
+        t.context?.subscriptions.push(classHoverProvider);
+    }
+}
+exports["default"] = InputComplement;
+
+
+/***/ }),
+/* 10 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+function VariableProvider(config) {
+    const provideCompletionItems = (document, position) => {
         const linePrefix = document.lineAt(position).text.substr(0, position.character);
         if (!linePrefix.endsWith("@")) {
             return undefined;
         }
-        const complements = Object.entries(this.config?.variableMap || {}).map((i) => {
-            // a completion item that can be accepted by a commit character,
-            // the `commitCharacters`-property is set which means that the completion will
-            // be inserted and then the character will be typed.
-            const isColor = i[1].startsWith("#") || i[1].toLowerCase().startsWith("rgb") || i[1].toLowerCase().startsWith("hls");
+        const complements = Object.entries(config?.variableMap || {}).map((i) => {
+            const isColor = i[1].value.startsWith("#") ||
+                i[1].value.toLowerCase().startsWith("rgb") ||
+                i[1].value.toLowerCase().startsWith("hls");
             const type = isColor ? vscode.CompletionItemKind.Color : vscode.CompletionItemKind.Variable;
             const completion = new vscode.CompletionItem(`${i[0]}`, type);
-            completion.detail = i[1];
-            completion.documentation = i[1];
+            completion.detail = i[1].value;
+            completion.documentation = i[1].value;
             return completion;
         });
         return [...complements];
-    }
-    pushClassName() {
-        const t = this;
-        const provideCompletionItems = (document, position) => t.provideClassCompletionItems.call(t, document, position);
-        const provider = vscode.languages.registerCompletionItemProvider("less", {
-            provideCompletionItems,
-        }, "." // triggered whenever a '.' is being typed
-        );
-        this.context?.subscriptions.push(provider);
-    }
-    provideClassCompletionItems(document, position) {
-        const t = this;
-        // get all text until the `position` and check if it reads `console.`
-        // and if so then complete if `log`, `warn`, and `error`
+    };
+    const provider = vscode.languages.registerCompletionItemProvider("less", {
+        provideCompletionItems,
+    }, "@" // triggered whenever a '@' is being typed
+    );
+    return provider;
+}
+exports["default"] = VariableProvider;
+
+
+/***/ }),
+/* 11 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+function ClassProvider(config) {
+    const provideCompletionItems = (document, position) => {
         const linePrefix = document.lineAt(position).text.substr(0, position.character);
         if (!linePrefix.endsWith(".")) {
             return undefined;
         }
-        const complements = t.config?.classes?.map((i) => {
+        const complements = config?.classes?.map((i) => {
             const CompletionItemLabel = {
                 label: `${i.class}`,
             };
@@ -401,9 +428,131 @@ class InputComplement {
             return complement;
         }) || [];
         return [...complements];
-    }
+    };
+    const provider = vscode.languages.registerCompletionItemProvider("less", {
+        provideCompletionItems,
+    }, "." // triggered whenever a '.' is being typed
+    );
+    return provider;
 }
-exports["default"] = InputComplement;
+exports["default"] = ClassProvider;
+
+
+/***/ }),
+/* 12 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+const path = __webpack_require__(5);
+function VariableHoverProvider(config) {
+    const provideHover = (document, position) => {
+        const word = document.getText(document.getWordRangeAtPosition(position));
+        const base = path.basename(config?.variableMap[word].path);
+        if (config?.variableMap[word]) {
+            const hover = new vscode.Hover(`变量(variable): ${word};\r\n` +
+                `值(value): ${config?.variableMap[word].value};\r\n` +
+                `来源(from): [${base}](${config?.variableMap[word].path});\r\n`);
+            return hover;
+        }
+    };
+    const provider = vscode.languages.registerHoverProvider("less", {
+        provideHover,
+    });
+    return provider;
+}
+exports["default"] = VariableHoverProvider;
+
+
+/***/ }),
+/* 13 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+const path = __webpack_require__(5);
+function ClassHoverProvider(config) {
+    const provideHover = (document, position) => {
+        const word = document.getText(document.getWordRangeAtPosition(position));
+        const _class = config?.classes.find((c) => word.includes(c.class));
+        if (!_class)
+            return;
+        const base = path.basename(_class.path);
+        const hover = new vscode.Hover(`变量(variable): ${word};\r\n` + `值(value): ${_class.detail};\r\n` + `来源(from): [${base}](${_class.path});\r\n`);
+        return hover;
+    };
+    const provider = vscode.languages.registerHoverProvider("less", {
+        provideHover,
+    });
+    return provider;
+}
+exports["default"] = ClassHoverProvider;
+
+
+/***/ }),
+/* 14 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+function VariableValueProvider(config) {
+    const provideCompletionItems = (document, position) => {
+        const linePrefix = document.lineAt(position).text.substr(0, position.character);
+        const valuesEntries = Object.entries(config?.variableValueMap || {});
+        const hasValuesReg = (value) => {
+            return new RegExp(`${value.split("").join("?") + "?"}$`, "i");
+        };
+        if (!valuesEntries.some((i) => hasValuesReg(i[0]).test(linePrefix))) {
+            return undefined;
+        }
+        const complements = valuesEntries.map((i) => {
+            const type = vscode.CompletionItemKind.Variable;
+            const completion = new vscode.CompletionItem(`${i[0]}`, type);
+            completion.detail = i[1].variable;
+            completion.documentation = i[1].variable;
+            completion.insertText = i[1].variable;
+            return completion;
+        });
+        return [...complements];
+    };
+    const provider = vscode.languages.registerCompletionItemProvider("less", {
+        provideCompletionItems,
+    }, "@" // triggered whenever a '@' is being typed
+    );
+    return provider;
+}
+exports["default"] = VariableValueProvider;
+
+
+/***/ }),
+/* 15 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+function definationProvider(config) {
+    const provideDefinition = (document, position) => {
+        const word = document.getText(document.getWordRangeAtPosition(position));
+        const _class = config?.classes.find((c) => word.includes(c.class));
+        const _variableValue = config?.variableValueMap[word];
+        const _variable = config?.variableMap[word];
+        if (!_class && !_variable && !_variableValue)
+            return;
+        const file = _class?.path || _variableValue?.path || _variable?.path;
+        const line = _class?.line || _variableValue?.line || _variable?.line;
+        const location = new vscode.Location(vscode.Uri.file(file), new vscode.Position(line, 0));
+        return [location];
+    };
+    const provider = vscode.languages.registerDefinitionProvider("less", {
+        provideDefinition,
+    });
+    return provider;
+}
+exports["default"] = definationProvider;
 
 
 /***/ })
@@ -447,8 +596,8 @@ const init_1 = __webpack_require__(1);
 function activate(context) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
-    console.log('"less-complement-helper" is now active!');
     (0, init_1.default)(context);
+    console.log('"less-complement-helper" is now active!');
 }
 exports.activate = activate;
 // this method is called when your extension is deactivated
