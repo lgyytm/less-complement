@@ -291,7 +291,7 @@ class Helper {
             }
         }
         else if (!content.startsWith(".") && this.holdingStr) {
-            this.holdingStr += `\r${content}`;
+            this.holdingStr += `\r\n \n${content}`;
         }
         else if (content.startsWith(".") && !this.holdingStr) {
             this.holdingStr += `${content}`;
