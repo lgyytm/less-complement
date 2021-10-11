@@ -2,7 +2,7 @@
   "name": "less-complement-helper",
   "displayName": "less-complement-helper",
   "description": "help you import less variables",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "mingor",
   "author": {
     "name": "mingor"

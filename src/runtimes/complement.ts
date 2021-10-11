@@ -1,11 +1,12 @@
 import Helper from "./helper";
 import * as vscode from "vscode";
-import VariableProvider from "./variable-provider";
-import ClassProvider from "./class-provider";
-import VariableHoverProvider from "./variable-hover-provider";
-import ClassHoverProvider from "./class-hover-provider";
-import VariableValueProvider from "./variable-value-provider";
-import definationProvider from "./defination";
+import VariableHoverProvider from "./providers/variable-hover-provider";
+import ClassHoverProvider from "./providers/class-hover-provider";
+import definationProvider from "./providers/defination";
+import codelenProvider from "./providers/codelen";
+import ClassProvider from "./providers/class-provider";
+import VariableValueProvider from "./providers/variable-value-provider";
+import VariableProvider from "./providers/variable-provider";
 
 export default class InputComplement {
   config: Helper;
@@ -21,10 +22,16 @@ export default class InputComplement {
     this.pushInput();
   }
   pushInput() {
+    // 变量自动补全
     this.pushVaribales();
+    // 变量值自动补全
     this.pushVaribalesValue();
+    // 类名自动补全
     this.pushClassName();
+    // 定义来源
     this.pushDefinationProviderValue();
+    // codelen
+    this.pushCodelen();
   }
   pushVaribales() {
     const t = this;
@@ -37,6 +44,11 @@ export default class InputComplement {
     const t = this;
     const variableValueProvider = VariableValueProvider(t.config);
     t.context?.subscriptions?.push(variableValueProvider);
+  }
+  pushCodelen() {
+    const t = this;
+    const codelen = codelenProvider(t.config);
+    t.context?.subscriptions?.push(codelen);
   }
   pushDefinationProviderValue() {
     const t = this;

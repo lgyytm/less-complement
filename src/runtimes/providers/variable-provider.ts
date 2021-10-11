@@ -1,4 +1,4 @@
-import Helper from "./helper";
+import Helper from "../helper";
 import * as vscode from "vscode";
 
 export default function VariableProvider(config: Helper) {

@@ -9,9 +9,11 @@
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const config_init_1 = __webpack_require__(2);
 const complement_1 = __webpack_require__(9);
+const commands_1 = __webpack_require__(17);
 const init = async (context) => {
     const instance = await (0, config_init_1.default)(context);
     if (instance) {
+        new commands_1.default();
         const variableHelper = new complement_1.default({
             config: instance,
             context,
@@ -320,12 +322,13 @@ exports["default"] = Helper;
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const variable_provider_1 = __webpack_require__(10);
-const class_provider_1 = __webpack_require__(11);
-const variable_hover_provider_1 = __webpack_require__(12);
-const class_hover_provider_1 = __webpack_require__(13);
-const variable_value_provider_1 = __webpack_require__(14);
+const variable_hover_provider_1 = __webpack_require__(10);
+const class_hover_provider_1 = __webpack_require__(11);
 const defination_1 = __webpack_require__(15);
+const codelen_1 = __webpack_require__(16);
+const class_provider_1 = __webpack_require__(12);
+const variable_value_provider_1 = __webpack_require__(13);
+const variable_provider_1 = __webpack_require__(14);
 class InputComplement {
     constructor({ config, context }) {
         this.config = config;
@@ -339,10 +342,16 @@ class InputComplement {
         this.pushInput();
     }
     pushInput() {
+        // 变量自动补全
         this.pushVaribales();
+        // 变量值自动补全
         this.pushVaribalesValue();
+        // 类名自动补全
         this.pushClassName();
+        // 定义来源
         this.pushDefinationProviderValue();
+        // codelen
+        this.pushCodelen();
     }
     pushVaribales() {
         const t = this;
@@ -355,6 +364,11 @@ class InputComplement {
         const t = this;
         const variableValueProvider = (0, variable_value_provider_1.default)(t.config);
         t.context?.subscriptions?.push(variableValueProvider);
+    }
+    pushCodelen() {
+        const t = this;
+        const codelen = (0, codelen_1.default)(t.config);
+        t.context?.subscriptions?.push(codelen);
     }
     pushDefinationProviderValue() {
         const t = this;
@@ -379,35 +393,54 @@ exports["default"] = InputComplement;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const vscode = __webpack_require__(4);
-function VariableProvider(config) {
-    const provideCompletionItems = (document, position) => {
-        const linePrefix = document.lineAt(position).text.substr(0, position.character);
-        if (!linePrefix.endsWith("@")) {
-            return undefined;
+const path = __webpack_require__(5);
+function VariableHoverProvider(config) {
+    const provideHover = (document, position) => {
+        const word = document.getText(document.getWordRangeAtPosition(position));
+        const base = path.basename(config?.variableMap[word].path);
+        if (config?.variableMap[word]) {
+            const hover = new vscode.Hover(`变量(variable): ${word};\r\n` +
+                `值(value): ${config?.variableMap[word].value};\r\n` +
+                `来源(from): [${base}](${config?.variableMap[word].path});\r\n`);
+            return hover;
         }
-        const complements = Object.entries(config?.variableMap || {}).map((i) => {
-            const isColor = i[1].value.startsWith("#") ||
-                i[1].value.toLowerCase().startsWith("rgb") ||
-                i[1].value.toLowerCase().startsWith("hls");
-            const type = isColor ? vscode.CompletionItemKind.Color : vscode.CompletionItemKind.Variable;
-            const completion = new vscode.CompletionItem(`${i[0]}`, type);
-            completion.detail = i[1].value;
-            completion.documentation = i[1].value;
-            return completion;
-        });
-        return [...complements];
     };
-    const provider = vscode.languages.registerCompletionItemProvider("less", {
-        provideCompletionItems,
-    }, "@" // triggered whenever a '@' is being typed
-    );
+    const provider = vscode.languages.registerHoverProvider("less", {
+        provideHover,
+    });
     return provider;
 }
-exports["default"] = VariableProvider;
+exports["default"] = VariableHoverProvider;
 
 
 /***/ }),
 /* 11 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+const path = __webpack_require__(5);
+function ClassHoverProvider(config) {
+    const provideHover = (document, position) => {
+        const word = document.getText(document.getWordRangeAtPosition(position));
+        const _class = config?.classes.find((c) => word.includes(c.class));
+        if (!_class)
+            return;
+        const base = path.basename(_class.path);
+        const hover = new vscode.Hover(`变量(variable): ${word};\r\n` + `值(value): ${_class.detail};\r\n` + `来源(from): [${base}](${_class.path});\r\n`);
+        return hover;
+    };
+    const provider = vscode.languages.registerHoverProvider("less", {
+        provideHover,
+    });
+    return provider;
+}
+exports["default"] = ClassHoverProvider;
+
+
+/***/ }),
+/* 12 */
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
@@ -439,60 +472,7 @@ exports["default"] = ClassProvider;
 
 
 /***/ }),
-/* 12 */
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const vscode = __webpack_require__(4);
-const path = __webpack_require__(5);
-function VariableHoverProvider(config) {
-    const provideHover = (document, position) => {
-        const word = document.getText(document.getWordRangeAtPosition(position));
-        const base = path.basename(config?.variableMap[word].path);
-        if (config?.variableMap[word]) {
-            const hover = new vscode.Hover(`变量(variable): ${word};\r\n` +
-                `值(value): ${config?.variableMap[word].value};\r\n` +
-                `来源(from): [${base}](${config?.variableMap[word].path});\r\n`);
-            return hover;
-        }
-    };
-    const provider = vscode.languages.registerHoverProvider("less", {
-        provideHover,
-    });
-    return provider;
-}
-exports["default"] = VariableHoverProvider;
-
-
-/***/ }),
 /* 13 */
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const vscode = __webpack_require__(4);
-const path = __webpack_require__(5);
-function ClassHoverProvider(config) {
-    const provideHover = (document, position) => {
-        const word = document.getText(document.getWordRangeAtPosition(position));
-        const _class = config?.classes.find((c) => word.includes(c.class));
-        if (!_class)
-            return;
-        const base = path.basename(_class.path);
-        const hover = new vscode.Hover(`变量(variable): ${word};\r\n` + `值(value): ${_class.detail};\r\n` + `来源(from): [${base}](${_class.path});\r\n`);
-        return hover;
-    };
-    const provider = vscode.languages.registerHoverProvider("less", {
-        provideHover,
-    });
-    return provider;
-}
-exports["default"] = ClassHoverProvider;
-
-
-/***/ }),
-/* 14 */
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
@@ -528,6 +508,40 @@ exports["default"] = VariableValueProvider;
 
 
 /***/ }),
+/* 14 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+function VariableProvider(config) {
+    const provideCompletionItems = (document, position) => {
+        const linePrefix = document.lineAt(position).text.substr(0, position.character);
+        if (!linePrefix.endsWith("@")) {
+            return undefined;
+        }
+        const complements = Object.entries(config?.variableMap || {}).map((i) => {
+            const isColor = i[1].value.startsWith("#") ||
+                i[1].value.toLowerCase().startsWith("rgb") ||
+                i[1].value.toLowerCase().startsWith("hls");
+            const type = isColor ? vscode.CompletionItemKind.Color : vscode.CompletionItemKind.Variable;
+            const completion = new vscode.CompletionItem(`${i[0]}`, type);
+            completion.detail = i[1].value;
+            completion.documentation = i[1].value;
+            return completion;
+        });
+        return [...complements];
+    };
+    const provider = vscode.languages.registerCompletionItemProvider("less", {
+        provideCompletionItems,
+    }, "@" // triggered whenever a '@' is being typed
+    );
+    return provider;
+}
+exports["default"] = VariableProvider;
+
+
+/***/ }),
 /* 15 */
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
@@ -553,6 +567,78 @@ function definationProvider(config) {
     return provider;
 }
 exports["default"] = definationProvider;
+
+
+/***/ }),
+/* 16 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+function codelenProvider(config) {
+    const provideCodeLenses = (document, token) => {
+        const text = document.getText();
+        const codeLenses = [];
+        try {
+            for (const value of Object.keys(config?.variableValueMap)) {
+                const variableMatches = text.matchAll(new RegExp(value, "g"));
+                for (const variableMatch of variableMatches) {
+                    const variable = config.variableValueMap[value].variable;
+                    if (variableMatch?.index !== undefined && variableMatch?.index > -1) {
+                        const line = document.lineAt(document.positionAt(variableMatch?.index).line);
+                        const indexOf = line.text.indexOf(variableMatch[0]);
+                        const position = new vscode.Position(line.lineNumber, indexOf);
+                        const range = document.getWordRangeAtPosition(position, new RegExp(value));
+                        if (range) {
+                            const codelen = new vscode.CodeLens(range);
+                            codelen.command = {
+                                title: `当前值${value}可替换的变量为${config.variableValueMap[value].variable}, 点击替换`,
+                                command: "less-complement-helper.replace",
+                                arguments: [value, variable, line, position, range],
+                            };
+                            codeLenses.push(codelen);
+                        }
+                    }
+                }
+            }
+            return codeLenses;
+        }
+        catch (e) {
+            return [];
+        }
+    };
+    const provider = vscode.languages.registerCodeLensProvider("less", {
+        provideCodeLenses,
+    });
+    return provider;
+}
+exports["default"] = codelenProvider;
+
+
+/***/ }),
+/* 17 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(4);
+class Commands {
+    constructor() {
+        this.init();
+    }
+    init() {
+        vscode.commands.registerCommand("less-complement-helper.replace", (text, replaceText, line, position, range) => {
+            const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                editor.edit((editBuilder) => {
+                    editBuilder.replace(range, replaceText);
+                });
+            }
+        });
+    }
+}
+exports["default"] = Commands;
 
 
 /***/ })

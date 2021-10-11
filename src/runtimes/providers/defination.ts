@@ -1,7 +1,5 @@
-import Helper from "./helper";
+import Helper from "../helper";
 import * as vscode from "vscode";
-import path = require("path");
-import { getRealFilePath } from "./file";
 
 export default function definationProvider(config: Helper) {
   const provideDefinition = (document: vscode.TextDocument, position: vscode.Position) => {
